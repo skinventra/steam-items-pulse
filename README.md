@@ -25,25 +25,23 @@ npm run dev
 
 ### Deploy to Railway
 
-See [RAILWAY_SETUP.md](./RAILWAY_SETUP.md) for detailed instructions on deploying to Railway.
-
-**TL;DR:**
 1. Push to GitHub
-2. Connect repo to Railway
-3. Add PostgreSQL plugin
-4. Set environment variables
-5. Deploy! 🚀
+2. Create project on [railway.app](https://railway.app) → Deploy from GitHub
+3. Add PostgreSQL plugin (+ Add → Database → PostgreSQL)
+4. Set environment variables (see `env.example`)
+5. Generate public domain (Settings → Networking)
+6. Done! 🚀
 
 ## Base URL
 
 **Local:**
 ```
-http://localhost:8000
+http://localhost:8080
 ```
 
 **Production (Railway):**
 ```
-https://your-app-xyz.railway.app
+https://your-app-xyz.up.railway.app
 ```
 
 ---
@@ -62,7 +60,13 @@ GET /health
   "status": "healthy",
   "timestamp": "2025-12-14T10:30:00Z",
   "version": "1.0.0",
-  "database": "connected"
+  "database": "connected",
+  "providers": {
+    "steam-market": {
+      "status": "healthy",
+      "latencyMs": 245
+    }
+  }
 }
 ```
 
@@ -173,6 +177,60 @@ GET /api/v1/stats
 
 ---
 
+### List Providers
+
+```
+GET /api/v1/providers
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "name": "steam-market",
+      "displayName": "Steam Community Market",
+      "enabled": true,
+      "status": "healthy",
+      "config": {
+        "batchSize": 10,
+        "requestDelay": 3000
+      }
+    }
+  ]
+}
+```
+
+---
+
+### Trigger Manual Scan
+
+```
+POST /api/v1/providers/:name/run
+```
+
+**Example:**
+```bash
+curl -X POST https://your-app.up.railway.app/api/v1/providers/steam-market/run
+```
+
+**Response:**
+```json
+{
+  "message": "Scan completed",
+  "result": {
+    "provider": "steam-market",
+    "startedAt": "2025-12-14T10:00:00Z",
+    "completedAt": "2025-12-14T11:15:00Z",
+    "itemsProcessed": 29019,
+    "itemsUpdated": 1547,
+    "errors": 0
+  }
+}
+```
+
+---
+
 ## Data Fields
 
 | Field | Type | Description |
@@ -182,6 +240,22 @@ GET /api/v1/stats
 | `price` | int | Price in cents |
 | `currency` | string | Currency code (EUR, USD, RUB, etc.) |
 | `listings` | int | Number of active sell listings |
+
+---
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | ✅ | - | PostgreSQL connection string |
+| `PORT` | ❌ | 8080 | Server port |
+| `NODE_ENV` | ❌ | development | Environment mode |
+| `STEAM_MARKET_ENABLED` | ❌ | true | Enable Steam Market parser |
+| `STEAM_MARKET_INTERVAL_MINUTES` | ❌ | 5 | Parse interval in minutes |
+| `STEAM_MARKET_BATCH_SIZE` | ❌ | 10 | Items per API request |
+| `STEAM_MARKET_DELAY_MS` | ❌ | 3000 | Delay between requests |
+| `RUN_INITIAL_SCAN` | ❌ | false | Run scan on startup |
+| `LOG_LEVEL` | ❌ | info | Log level (debug/info/warn/error) |
 
 ---
 
@@ -200,4 +274,32 @@ GET /api/v1/stats
 |------|------|-------------|
 | `VALIDATION_ERROR` | 400 | Invalid request parameters |
 | `ITEM_NOT_FOUND` | 404 | Item not found |
+| `PROVIDER_NOT_FOUND` | 404 | Provider not found |
+| `SCAN_FAILED` | 400 | Manual scan failed |
 | `INTERNAL_ERROR` | 500 | Server error |
+
+---
+
+## 🗺️ Roadmap
+
+### Planned Features
+
+- [ ] **Rate Limiting** — Protect API from abuse (100 req/min per IP)
+- [ ] **Response Caching** — In-memory cache for frequent queries
+- [ ] **API Keys** — Authentication for public API access
+- [ ] **Price History** — Track price changes over time
+- [ ] **Multiple Providers** — Add more price sources (Buff163, CSFloat, etc.)
+- [ ] **Webhooks** — Notify on significant price changes
+- [ ] **GraphQL API** — Alternative to REST
+
+### Infrastructure
+
+- [ ] **Redis** — External cache for multi-replica deployments
+- [ ] **Sentry** — Error monitoring and alerting
+- [ ] **Prometheus/Grafana** — Metrics and dashboards
+
+---
+
+## License
+
+MIT
