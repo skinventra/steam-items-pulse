@@ -46,4 +46,4 @@ USER appuser
 EXPOSE 8000
 
 # Run database migrations and start app
-CMD ["sh", "-c", "npm run db:push && node dist/index.js"]
+CMD ["sh", "-c", "npx drizzle-kit push --force && node dist/index.js"]
