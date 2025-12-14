@@ -20,7 +20,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=8000
+ENV PORT=8080
 
 # Copy package files
 COPY --from=builder /app/package.json ./
@@ -43,7 +43,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8080
 
 # Run database migrations and start app
 CMD ["sh", "-c", "npx drizzle-kit push --force && node dist/index.js"]

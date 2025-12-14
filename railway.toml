@@ -27,7 +27,7 @@ restartPolicyMaxRetries = 10
 # Path to check for HTTP healthcheck
 path = "/health"
 # Port to check (default: $PORT)
-port = 8000
+port = 8080
 # Timeout for healthcheck request
 timeout = 10
 # Interval between healthchecks
