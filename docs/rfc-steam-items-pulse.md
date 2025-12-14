@@ -384,18 +384,27 @@ class SteamMarketProvider implements IProvider {
         count: 10,               // 10 items per request
         sort_column: 'name',     // Sort by name alphabetically
         sort_dir: 'asc',         // Ascending order (A → Z)
-        currency: 1,             // USD
       }
     );
     
     return response.results.map(item => ({
       externalId: item.hash_name,
       nameEn: item.name,
-      priceUsdCents: item.sell_price,
+      priceCents: item.sell_price,
+      currency: this.extractCurrency(item.sell_price_text), // "4,90€" → "EUR"
       listings: item.sell_listings,
       iconUrl: this.buildIconUrl(item.asset_description?.icon_url),
       source: this.name,
     }));
+  }
+  
+  // Extract currency from price text like "4,90€", "$12.50", "₽850"
+  private extractCurrency(priceText: string): string {
+    if (priceText.includes('€')) return 'EUR';
+    if (priceText.includes('$')) return 'USD';
+    if (priceText.includes('₽')) return 'RUB';
+    if (priceText.includes('£')) return 'GBP';
+    return 'USD'; // fallback
   }
   
   // ... other methods
@@ -537,17 +546,20 @@ CREATE TABLE items (
     Example structure:
     {
       "steam-market": {
-        "price": 1250,              // price in cents (USD)
-        "listings": 1847,           // number of sell listings
+        "price": 490,               // price in cents
+        "currency": "EUR",          // currency code (EUR, USD, RUB, etc.)
+        "listings": 10,             // number of sell listings
         "updatedAt": "2025-12-14T10:25:00Z"
       },
       "csfloat": {
-        "price": 1180,
+        "price": 450,
+        "currency": "USD",
         "listings": 234,
         "updatedAt": "2025-12-14T10:22:00Z"
       },
       "skinport": {
-        "price": 1220,
+        "price": 480,
+        "currency": "EUR",
         "listings": 89,
         "updatedAt": "2025-12-14T10:20:00Z"
       }
@@ -743,12 +755,14 @@ Query Parameters:
 ├── start: 0                      # Pagination offset
 ├── count: 10                     # Items per request
 ├── sort_column: name             # Sort by name (alphabetical)
-├── sort_dir: asc                 # Ascending order (A → Z)
-└── currency: 1                   # USD
+└── sort_dir: asc                 # Ascending order (A → Z)
 ```
 
 > **Note:** We use `sort_column=name` and `sort_dir=asc` for consistent alphabetical ordering. 
 > This ensures deterministic pagination without skipping or duplicating items between requests.
+>
+> **Currency:** Not specified as a parameter. Steam returns prices based on server IP geolocation.
+> Currency symbol is extracted from `sell_price_text` field (e.g., "4,90€", "$12.50", "₽850").
 
 **Example Response:**
 
@@ -1258,8 +1272,6 @@ STEAM_MARKET_INTERVAL_MINUTES=5
 STEAM_MARKET_BATCH_SIZE=10
 STEAM_MARKET_DELAY_MS=3000
 STEAM_MARKET_MAX_RETRIES=3
-STEAM_MARKET_SORT_COLUMN=name
-STEAM_MARKET_SORT_DIR=asc
 
 # Provider: CSFloat (future)
 CSFLOAT_ENABLED=false
@@ -1533,7 +1545,7 @@ describe('Parser E2E', () => {
 
 ```bash
 # Get first 10 CS2 items (sorted by name A→Z)
-curl "https://steamcommunity.com/market/search/render/?appid=730&norender=1&start=0&count=10&sort_column=name&sort_dir=asc&currency=1"
+curl "https://steamcommunity.com/market/search/render/?appid=730&norender=1&start=0&count=10&sort_column=name&sort_dir=asc"
 
 # Get specific item price
 curl "https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=AK-47%20%7C%20Redline%20(Field-Tested)"
