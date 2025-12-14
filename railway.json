@@ -1,0 +1,20 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "dockerfile"
+  },
+  "deploy": {
+    "restartPolicyType": "always",
+    "restartPolicyMaxRetries": 5,
+    "healthchecks": {
+      "readiness": {
+        "initialDelaySeconds": 10,
+        "periodSeconds": 30,
+        "timeoutSeconds": 10,
+        "failureThreshold": 3,
+        "command": ["curl", "-f", "http://localhost:8000/health"]
+      }
+    }
+  }
+}
+
