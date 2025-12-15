@@ -17,7 +17,23 @@ export function startScheduler(): void {
   }
 
   const intervalMinutes = steamMarketConfig.intervalMinutes;
-  const cronExpression = `*/${intervalMinutes} * * * *`;
+  let cronExpression: string;
+
+  if (intervalMinutes < 60) {
+    // For intervals less than 1 hour, use minutes
+    cronExpression = `*/${intervalMinutes} * * * *`;
+  } else if (intervalMinutes % 60 === 0) {
+    // For intervals that are exact hours, use hour syntax
+    const intervalHours = intervalMinutes / 60;
+    cronExpression = `0 */${intervalHours} * * *`;
+  } else {
+    // For other intervals, use minutes but ensure they work correctly
+    cronExpression = `0 0 * * *`; // Default to daily
+    logger.warn(
+      { intervalMinutes },
+      'Interval minutes is not a multiple of 60, defaulting to daily execution'
+    );
+  }
 
   logger.info({ cronExpression, intervalMinutes }, 'Starting scheduler');
 
@@ -86,4 +102,6 @@ export async function runInitialScan(): Promise<void> {
     logger.error({ error: String(error) }, 'Initial scan failed');
   }
 }
+
+
 
