@@ -30,6 +30,7 @@ export class SteamMarketProvider implements IProvider {
       requestDelay: steamMarketConfig.delayMs,
       batchSize: steamMarketConfig.batchSize,
       maxRetries: steamMarketConfig.maxRetries,
+      retryDelay: steamMarketConfig.retryDelayMs,
       baseUrl: steamMarketConfig.baseUrl,
     };
   }
@@ -194,7 +195,7 @@ export class SteamMarketProvider implements IProvider {
 
       if (response.status === 429) {
         if (attempt <= this.config.maxRetries) {
-          const delay = 60000 * attempt; // 60s, 120s, 180s
+          const delay = this.config.retryDelay * attempt;
           logger.warn({ attempt, delayMs: delay }, 'Rate limited, waiting...');
           await sleep(delay);
           return this.fetchWithRetry(url, attempt + 1);

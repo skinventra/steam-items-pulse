@@ -14,6 +14,9 @@ export interface ProviderConfig {
   /** Max retry attempts */
   maxRetries: number;
   
+  /** Delay on retry for failed requests in ms */
+  retryDelay: number;
+  
   /** Base URL for API */
   baseUrl: string;
   

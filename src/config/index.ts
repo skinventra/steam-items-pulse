@@ -15,6 +15,7 @@ const envSchema = z.object({
   STEAM_MARKET_BATCH_SIZE: z.coerce.number().default(10),
   STEAM_MARKET_DELAY_MS: z.coerce.number().default(3000),
   STEAM_MARKET_MAX_RETRIES: z.coerce.number().default(3),
+  STEAM_MARKET_RETRY_DELAY_MS: z.coerce.number().default(60000),
 
   // Logging
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
@@ -49,6 +50,7 @@ export const steamMarketConfig = {
   batchSize: config.STEAM_MARKET_BATCH_SIZE,
   delayMs: config.STEAM_MARKET_DELAY_MS,
   maxRetries: config.STEAM_MARKET_MAX_RETRIES,
+  retryDelayMs: config.STEAM_MARKET_RETRY_DELAY_MS,
   baseUrl: 'https://steamcommunity.com/market',
   cdnBaseUrl: 'https://steamcommunity-a.akamaihd.net/economy/image/',
 };
