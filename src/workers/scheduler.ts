@@ -6,6 +6,7 @@ import { createLogger } from '../utils/logger.js';
 const logger = createLogger('scheduler');
 
 let scheduledTask: cron.ScheduledTask | null = null;
+let isScanRunning = false;
 
 /**
  * Start the scheduler for background parsing
@@ -38,6 +39,12 @@ export function startScheduler(): void {
   logger.info({ cronExpression, intervalMinutes }, 'Starting scheduler');
 
   scheduledTask = cron.schedule(cronExpression, async () => {
+    if (isScanRunning) {
+      logger.warn('Scheduled scan skipped - previous scan is still running');
+      return;
+    }
+
+    isScanRunning = true;
     logger.info('Scheduled scan triggered');
 
     try {
@@ -57,6 +64,8 @@ export function startScheduler(): void {
       }
     } catch (error) {
       logger.error({ error: String(error) }, 'Scheduled scan failed');
+    } finally {
+      isScanRunning = false;
     }
   });
 
@@ -75,6 +84,13 @@ export function stopScheduler(): void {
 }
 
 /**
+ * Check if a scan is currently running
+ */
+export function isScanInProgress(): boolean {
+  return isScanRunning;
+}
+
+/**
  * Run initial scan on startup
  */
 export async function runInitialScan(): Promise<void> {
@@ -83,6 +99,12 @@ export async function runInitialScan(): Promise<void> {
     return;
   }
 
+  if (isScanRunning) {
+    logger.warn('Initial scan skipped - another scan is already running');
+    return;
+  }
+
+  isScanRunning = true;
   logger.info('Running initial scan...');
 
   try {
@@ -100,6 +122,8 @@ export async function runInitialScan(): Promise<void> {
     }
   } catch (error) {
     logger.error({ error: String(error) }, 'Initial scan failed');
+  } finally {
+    isScanRunning = false;
   }
 }
 
