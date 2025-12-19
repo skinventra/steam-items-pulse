@@ -249,11 +249,14 @@ curl -X POST https://your-app.up.railway.app/api/v1/providers/steam-market/run
 |----------|----------|---------|-------------|
 | `DATABASE_URL` | ✅ | - | PostgreSQL connection string |
 | `PORT` | ❌ | 8080 | Server port |
+| `HOST` | ❌ | 0.0.0.0 | Host to bind |
 | `NODE_ENV` | ❌ | development | Environment mode |
 | `STEAM_MARKET_ENABLED` | ❌ | true | Enable Steam Market parser |
 | `STEAM_MARKET_INTERVAL_MINUTES` | ❌ | 5 | Parse interval in minutes |
 | `STEAM_MARKET_BATCH_SIZE` | ❌ | 10 | Items per API request |
-| `STEAM_MARKET_DELAY_MS` | ❌ | 3000 | Delay between requests |
+| `STEAM_MARKET_DELAY_MS` | ❌ | 3000 | Delay between requests (ms) |
+| `STEAM_MARKET_MAX_RETRIES` | ❌ | 3 | Max retry attempts on errors |
+| `STEAM_MARKET_RETRY_DELAY_MS` | ❌ | 60000 | Delay on retry (ms), multiplied by attempt |
 | `RUN_INITIAL_SCAN` | ❌ | false | Run scan on startup |
 | `LOG_LEVEL` | ❌ | info | Log level (debug/info/warn/error) |
 
