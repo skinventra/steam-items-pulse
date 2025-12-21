@@ -91,38 +91,51 @@ export class SteamMarketProvider implements IProvider {
 
       logger.info({ totalCount, totalBatches }, 'Market scan parameters');
 
-      for (let batch = 0; batch < totalBatches; batch++) {
+      let batch = 0;
+      while (batch < totalBatches) {
         const offset = batch * this.config.batchSize;
+        let batchAttempt = 0;
+        let batchSuccess = false;
 
-        try {
-          const items = await this.fetchItems({
-            offset,
-            limit: this.config.batchSize,
-          });
+        while (!batchSuccess) {
+          batchAttempt++;
 
-          // Upsert items to database
-          const updated = await this.upsertItems(items);
-          itemsUpdated += updated;
-          itemsProcessed += items.length;
+          try {
+            const items = await this.fetchItems({
+              offset,
+              limit: this.config.batchSize,
+            });
 
-          logger.debug(
-            { batch: batch + 1, totalBatches, itemsProcessed },
-            'Batch processed'
-          );
+            // Upsert items to database
+            const updated = await this.upsertItems(items);
+            itemsUpdated += updated;
+            itemsProcessed += items.length;
 
-          // Rate limiting delay
-          if (batch < totalBatches - 1) {
-            await sleep(this.config.requestDelay);
+            logger.debug(
+              { batch: batch + 1, totalBatches, itemsProcessed },
+              'Batch processed'
+            );
+
+            batchSuccess = true;
+
+            // Rate limiting delay before next batch
+            if (batch < totalBatches - 1) {
+              await sleep(this.config.requestDelay);
+            }
+          } catch (error) {
+            errors++;
+            const message = error instanceof Error ? error.message : String(error);
+            errorMessages.push(`Batch ${batch} (attempt ${batchAttempt}): ${message}`);
+            logger.error({ batch, attempt: batchAttempt, error: message }, 'Batch failed, retrying...');
+
+            // Exponential backoff before retry
+            const delay = this.config.requestDelay * Math.pow(2, batchAttempt - 1);
+            logger.warn({ batch, attempt: batchAttempt, delayMs: delay }, 'Waiting before retry...');
+            await sleep(delay);
           }
-        } catch (error) {
-          errors++;
-          const message = error instanceof Error ? error.message : String(error);
-          errorMessages.push(`Batch ${batch}: ${message}`);
-          logger.error({ batch, error: message }, 'Batch failed');
-          
-          // Continue with next batch
-          await sleep(this.config.requestDelay * 2);
         }
+
+        batch++;
       }
     } catch (error) {
       errors++;
