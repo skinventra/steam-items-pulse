@@ -195,7 +195,7 @@ export class SteamMarketProvider implements IProvider {
 
       if (response.status === 429) {
         if (attempt <= this.config.maxRetries) {
-          const delay = this.config.retryDelay * attempt;
+          const delay = this.config.retryDelay * Math.pow(2, attempt - 1);
           logger.warn({ attempt, delayMs: delay }, 'Rate limited, waiting...');
           await sleep(delay);
           return this.fetchWithRetry(url, attempt + 1);
@@ -216,7 +216,7 @@ export class SteamMarketProvider implements IProvider {
       return data;
     } catch (error) {
       if (attempt <= this.config.maxRetries && !(error instanceof Error && error.message.includes('Rate limit'))) {
-        const delay = this.config.requestDelay * attempt;
+        const delay = this.config.requestDelay * Math.pow(2, attempt - 1);
         logger.warn({ attempt, error: String(error) }, 'Request failed, retrying...');
         await sleep(delay);
         return this.fetchWithRetry(url, attempt + 1);
